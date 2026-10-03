@@ -203,6 +203,14 @@
           </svg>
           <span id="mirror-btn-label">対面ON</span>
         </button>
+        <!-- 端置き時のみ表示される90度画面回転トグル -->
+        <button id="btn-toggle-edge-rotate" class="btn-icon edge-only-btn" title="画面の90°回転切替">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.99 6.57 2.57L21 8"></path>
+            <path d="M21 3v5h-5"></path>
+          </svg>
+          <span id="edge-rotate-label">横回転</span>
+        </button>
         <button id="btn-quick-menu" class="btn-icon" title="メニュー・設定">
           <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
             <circle cx="12" cy="6" r="2" fill="currentColor"></circle>
@@ -347,8 +355,6 @@
       </div>
     </section>
 
-  </div>
-
   <!-- ==================== モーダル: サイコロ・コインシート ==================== -->
   <div id="modal-dice-sheet" class="modal-backdrop hidden">
     <div class="modal-card modal-dice-card">
@@ -480,11 +486,15 @@
           </div>
         </div>
 
-        <!-- 端置き時の左右入替 -->
+        <!-- 端置き時の左右入替 & 強制回転 -->
         <div class="menu-item-block edge-only-setting">
           <label class="setting-item">
             <span>端置き時の左右入替 (左=相手 / 右=自分)</span>
             <input type="checkbox" id="check-swap-sides-menu">
+          </label>
+          <label class="setting-item" style="margin-top: 6px;">
+            <span>端置き時の強制90°回転 (回転しない端末用)</span>
+            <input type="checkbox" id="check-force-rotate-menu" checked>
           </label>
         </div>
 
@@ -569,9 +579,13 @@
           <span>相手側の180°対面表示 (中央置き時)</span>
           <input type="checkbox" id="check-mirror-setting" checked>
         </label>
-        <label class="setting-item">
+        <label class="setting-item edge-only-setting">
           <span>端置き時の左右入替 (左=相手 / 右=自分)</span>
           <input type="checkbox" id="check-swap-sides-setting">
+        </label>
+        <label class="setting-item edge-only-setting">
+          <span>端置き時の強制90°回転 (回転しない端末用)</span>
+          <input type="checkbox" id="check-force-rotate-setting" checked>
         </label>
         <label class="setting-item">
           <span>効果音 (Web Audio)</span>
@@ -615,6 +629,8 @@
       </div>
     </div>
   </div>
+
+  </div> <!-- #app -->
 
   <script type="module" src="js/app.js"></script>
 </body>

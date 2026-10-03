@@ -108,15 +108,6 @@ html, body {
    端置きレイアウト (layout-edge: 横画面・左右分割・回転なし)
    ========================================================================== */
 .app-container.layout-edge {
-  flex-direction: column;
-}
-
-.layout-edge .center-only-btn {
-  display: none !important; /* 端置き時は中央置き専用ボタンを隠す */
-}
-
-/* パネルを左右に並べるコンテナとして振る舞う */
-.layout-edge {
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 50px;
@@ -125,18 +116,37 @@ html, body {
     "center-bar center-bar";
 }
 
-/* 端末が縦向きのまま端置きが選ばれた場合、CSSで90度自動回転させてオートで横向きにする */
-@media screen and (orientation: portrait) {
-  .app-container.layout-edge {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 100dvh !important;
-    height: 100dvw !important;
-    transform: translate(-50%, -50%) rotate(90deg);
-    transform-origin: center center;
-    overflow: hidden;
-  }
+/* 中央置き時は端置き専用UIを隠す */
+.layout-center .edge-only-btn,
+.layout-center .edge-only-setting {
+  display: none !important;
+}
+
+/* 端置き時は中央置き専用UIを隠す */
+.layout-edge .center-only-btn,
+.layout-edge .center-only-setting {
+  display: none !important;
+}
+
+/* 端置きレイアウトの強制90度回転モード (画面縦持ち時やOS回転ロック時に使用) */
+.app-container.layout-edge.edge-rotate-90 {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 100dvh !important;
+  height: 100dvw !important;
+  max-width: 100dvh !important;
+  max-height: 100dvw !important;
+  transform: translate(-50%, -50%) rotate(90deg) !important;
+  transform-origin: center center !important;
+  overflow: hidden !important;
+}
+
+/* 横回転ボタンのアクティブ表示 */
+#btn-toggle-edge-rotate.active {
+  background: rgba(14, 165, 233, 0.25) !important;
+  color: var(--color-cyan) !important;
+  border-color: rgba(14, 165, 233, 0.5) !important;
 }
 
 .layout-edge #panel-player {

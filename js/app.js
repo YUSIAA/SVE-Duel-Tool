@@ -79,6 +79,8 @@ const elements = {
   btnDiceSheet: document.getElementById('btn-dice-sheet'),
   btnToggleMirror: document.getElementById('btn-toggle-mirror'),
   mirrorBtnLabel: document.getElementById('mirror-btn-label'),
+  btnToggleEdgeRotate: document.getElementById('btn-toggle-edge-rotate'),
+  edgeRotateLabel: document.getElementById('edge-rotate-label'),
   btnQuickMenu: document.getElementById('btn-quick-menu'),
   btnTurnMinus: document.getElementById('btn-turn-minus'),
   btnTurnPlus: document.getElementById('btn-turn-plus'),
@@ -122,6 +124,7 @@ const elements = {
   btnSetViewDetail: document.getElementById('btn-set-view-detail'),
   btnSetViewSimple: document.getElementById('btn-set-view-simple'),
   checkSwapSidesMenu: document.getElementById('check-swap-sides-menu'),
+  checkForceRotateMenu: document.getElementById('check-force-rotate-menu'),
   btnMenuOpenNewgame: document.getElementById('btn-menu-open-newgame'),
   btnMenuOpenSettings: document.getElementById('btn-menu-open-settings'),
   btnCloseQuickMenu: document.getElementById('btn-close-quick-menu'),
@@ -147,6 +150,7 @@ const elements = {
   selectViewModeSetting: document.getElementById('select-viewmode-setting'),
   checkMirrorSetting: document.getElementById('check-mirror-setting'),
   checkSwapSidesSetting: document.getElementById('check-swap-sides-setting'),
+  checkForceRotateSetting: document.getElementById('check-force-rotate-setting'),
   checkSoundSetting: document.getElementById('check-sound-setting'),
   checkHapticSetting: document.getElementById('check-haptic-setting'),
   checkWakeLockSetting: document.getElementById('check-wakelock-setting'),
@@ -167,6 +171,47 @@ const elements = {
 let activeEditingPlayer = null;
 let activeSheetPlayer = null;
 let selectedDiceCount = 1;
+let isEdgeRotated90 = false;
+let forceRotateSettingEnabled = true;
+
+/**
+ * 端置き時の画面回転を更新・適用する
+ * @param {boolean} manualToggle 手動トグルボタンによる切り替えかどうか
+ */
+function updateEdgeRotation(manualToggle = false) {
+  const isEdge = store.config.layout === 'edge';
+  if (!isEdge) {
+    isEdgeRotated90 = false;
+    elements.appContainer.classList.remove('edge-rotate-90');
+    if (elements.btnToggleEdgeRotate) {
+      elements.btnToggleEdgeRotate.classList.remove('active');
+    }
+    return;
+  }
+
+  const isPortrait = window.innerHeight > window.innerWidth;
+
+  if (manualToggle) {
+    // 手動ボタンで切り替えられた場合は現在のフラグ値をそのまま使用
+  } else {
+    // リサイズやレイアウト切り替え時の自動判定
+    if (!isPortrait) {
+      // 端末が物理的に横長の場合は回転を解除
+      isEdgeRotated90 = false;
+    } else if (forceRotateSettingEnabled) {
+      // 端末が縦持ちで強制回転が有効な場合は自動で90度回転
+      isEdgeRotated90 = true;
+    }
+  }
+
+  elements.appContainer.classList.toggle('edge-rotate-90', isEdgeRotated90);
+  if (elements.btnToggleEdgeRotate) {
+    elements.btnToggleEdgeRotate.classList.toggle('active', isEdgeRotated90);
+  }
+  if (elements.edgeRotateLabel) {
+    elements.edgeRotateLabel.textContent = isEdgeRotated90 ? '90°回転中' : '横回転';
+  }
+}
 
 // ==========================================================================
 // 画面更新 (レンダリング)
@@ -177,6 +222,9 @@ function render(state, config) {
   elements.appContainer.classList.toggle('layout-center', !isEdge);
   elements.appContainer.classList.toggle('layout-edge', isEdge);
   elements.appContainer.classList.toggle('swap-sides', isEdge && !!config.swapSides);
+
+  // 端置きの画面回転状態を更新
+  updateEdgeRotation();
 
   const isSimple = config.viewMode === 'simple';
   elements.appContainer.classList.toggle('view-detail', !isSimple);
@@ -435,6 +483,16 @@ function setupEventListeners() {
     device.vibrateLight();
   });
 
+  // 画面横回転トグル (端置き時のみ)
+  if (elements.btnToggleEdgeRotate) {
+    elements.btnToggleEdgeRotate.addEventListener('click', () => {
+      isEdgeRotated90 = !isEdgeRotated90;
+      updateEdgeRotation(true);
+      sounds.playTap();
+      device.vibrateLight();
+    });
+  }
+
   // ==========================================================================
   // サイコロ・コインシート
   // ==========================================================================
@@ -638,6 +696,17 @@ function setupEventListeners() {
     sounds.playTap();
   });
 
+  if (elements.checkForceRotateMenu) {
+    elements.checkForceRotateMenu.addEventListener('change', (e) => {
+      forceRotateSettingEnabled = e.target.checked;
+      if (elements.checkForceRotateSetting) {
+        elements.checkForceRotateSetting.checked = e.target.checked;
+      }
+      updateEdgeRotation();
+      sounds.playTap();
+    });
+  }
+
   elements.btnMenuOpenNewgame.addEventListener('click', () => {
     elements.modalQuickMenu.classList.add('hidden');
     elements.modalNewGame.classList.remove('hidden');
@@ -715,6 +784,14 @@ function setupEventListeners() {
   elements.btnGameoverDismiss.addEventListener('click', () => {
     elements.modalGameover.classList.add('hidden');
     sounds.playTap();
+  });
+
+  // 画面向き変更・リサイズ時の回転追従
+  window.addEventListener('resize', () => {
+    updateEdgeRotation();
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(updateEdgeRotation, 100);
   });
 }
 
@@ -875,6 +952,9 @@ function openQuickMenuModal() {
   elements.btnSetViewDetail.classList.toggle('active', config.viewMode === 'detail');
   elements.btnSetViewSimple.classList.toggle('active', config.viewMode === 'simple');
   elements.checkSwapSidesMenu.checked = !!config.swapSides;
+  if (elements.checkForceRotateMenu) {
+    elements.checkForceRotateMenu.checked = forceRotateSettingEnabled;
+  }
   elements.modalQuickMenu.classList.remove('hidden');
 }
 
@@ -885,7 +965,7 @@ async function setLayoutMode(layout) {
 
   // Screen Orientation API & Fullscreen API による自動横向き画面回転
   if (layout === 'edge') {
-    // 通常タブの場合、fullscreenに入るとorientation.lockが確実に通る
+    // 通常タブの場合、fullscreenに入るとorientation.lockが確実に通る場合がある
     if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
       try {
         await document.documentElement.requestFullscreen();
@@ -895,9 +975,11 @@ async function setLayoutMode(layout) {
       try {
         await screen.orientation.lock('landscape');
       } catch (e) {
-        // ロックがブロックされた場合でも CSS @media (orientation: portrait) により自動90度回転フォールバックが働く
+        // ロックがブロックされた場合でも CSS/JS仮想90度回転フォールバックが働く
       }
     }
+    // OSの許可成否にかかわらず、縦持ちなら仮想90度回転を適用
+    updateEdgeRotation();
   } else {
     // 中央置き (縦) に戻す時
     if (screen.orientation && screen.orientation.lock) {
@@ -905,6 +987,7 @@ async function setLayoutMode(layout) {
         await screen.orientation.lock('portrait');
       } catch (e) {}
     }
+    updateEdgeRotation();
   }
 }
 
@@ -920,6 +1003,9 @@ function openSettingsModal() {
   elements.selectViewModeSetting.value = config.viewMode || 'detail';
   elements.checkMirrorSetting.checked = config.mirrorOpponent;
   elements.checkSwapSidesSetting.checked = !!config.swapSides;
+  if (elements.checkForceRotateSetting) {
+    elements.checkForceRotateSetting.checked = forceRotateSettingEnabled;
+  }
   elements.checkSoundSetting.checked = config.soundEnabled;
   elements.checkHapticSetting.checked = config.hapticEnabled;
   elements.checkWakeLockSetting.checked = config.wakeLockEnabled;
@@ -939,6 +1025,13 @@ function saveSettingsModal() {
     wakeLockEnabled: elements.checkWakeLockSetting.checked,
     initialLife: parseInt(elements.inputInitLife.value, 10) || 20,
   };
+
+  if (elements.checkForceRotateSetting) {
+    forceRotateSettingEnabled = elements.checkForceRotateSetting.checked;
+    if (elements.checkForceRotateMenu) {
+      elements.checkForceRotateMenu.checked = forceRotateSettingEnabled;
+    }
+  }
 
   store.updateConfig(newConfig);
   sounds.setEnabled(newConfig.soundEnabled);

@@ -1,0 +1,12 @@
+# Test & scratch files
+test_*.py
+generate_icons.py
+screenshot_*.png
+__pycache__/
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

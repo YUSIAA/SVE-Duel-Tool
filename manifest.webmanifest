@@ -1,0 +1,39 @@
+{
+  "name": "EVOLVE Tracker - 対戦管理アプリ",
+  "short_name": "EVOLVE Tracker",
+  "description": "Shadowverse EVOLVE 専用の対戦管理PWA。中央置き・端置き両対応、詳細・シンプル切替、EP・SEP・超進化・PPをスマート管理。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#070a13",
+  "theme_color": "#090d16",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "games"],
+  "shortcuts": [
+    {
+      "name": "新しい対戦を開始",
+      "url": "./index.html",
+      "description": "対戦状態をリセットして開始"
+    }
+  ]
+}

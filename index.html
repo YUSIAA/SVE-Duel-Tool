@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EVOLVE Tracker - Shadowverse EVOLVE 対戦管理</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#090d16">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EVOLVE Tracker">
+  <meta name="description" content="Shadowverse EVOLVE 専用の対戦管理PWA。中央置き・端置き両対応、詳細・シンプル切替、EP・SEP・超進化・PPをスマート管理。">
+  
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/icon.svg">
+  
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app" class="app-container layout-center view-detail">
+
+    <!-- ==================== 相手側エリア (OPPONENT) ==================== -->
+    <section id="panel-opponent" class="player-panel opponent" data-player="opponent">
+      <!-- 相手ヘッダー -->
+      <div class="panel-header">
+        <div class="player-badge-group">
+          <span class="player-name">相手 (OPPONENT)</span>
+          <span id="opp-order-badge" class="order-badge">後攻 2nd</span>
+          <span id="opp-active-badge" class="active-turn-badge">手番中</span>
+        </div>
+        <div class="evolve-status-group view-detail-only">
+          <button id="opp-evolve-status-btn" class="status-pill not-evolved" title="タップで進化状態切替">
+            未進化
+          </button>
+        </div>
+      </div>
+
+      <!-- ライフ & 操作ボタン -->
+      <div class="life-section">
+        <div class="life-controls left">
+          <button class="btn-step btn-minus-5" data-action="life" data-player="opponent" data-delta="-5">-5</button>
+          <button class="btn-step btn-minus-1" data-action="life" data-player="opponent" data-delta="-1">-1</button>
+        </div>
+
+        <div class="life-display" id="opp-life-display" data-player="opponent" title="タップして数値を入力">
+          <span class="life-label">LIFE</span>
+          <span id="opp-life-value" class="life-value">20</span>
+        </div>
+
+        <div class="life-controls right">
+          <button class="btn-step btn-plus-1" data-action="life" data-player="opponent" data-delta="1">+1</button>
+          <button class="btn-step btn-plus-5" data-action="life" data-player="opponent" data-delta="5">+5</button>
+        </div>
+      </div>
+
+      <!-- 【詳細表示用】リソースグリッド & クイック進化バー -->
+      <div class="view-detail-only detail-resources-wrapper">
+        <div class="resources-grid">
+          <!-- PP -->
+          <div class="resource-card pp-card">
+            <div class="card-title">
+              <span>PP</span>
+              <span class="pp-ratio"><b id="opp-pp-val">0</b> / <span id="opp-max-pp-val">0</span></span>
+            </div>
+            <div class="resource-ctrls">
+              <button class="btn-micro" data-action="pp" data-player="opponent" data-delta="-1">-1</button>
+              <button class="btn-micro btn-recover" id="opp-pp-max-btn" data-action="pp-recover" data-player="opponent" title="PP全回復">全回復</button>
+              <button class="btn-micro" data-action="pp" data-player="opponent" data-delta="1">+1</button>
+            </div>
+            <div class="max-pp-tune">
+              <span class="tiny-label">上限:</span>
+              <button class="btn-nano" data-action="max-pp" data-player="opponent" data-delta="-1">-</button>
+              <button class="btn-nano" data-action="max-pp" data-player="opponent" data-delta="1">+</button>
+            </div>
+          </div>
+
+          <!-- EP -->
+          <div class="resource-card ep-card">
+            <div class="card-title">
+              <span>EP</span>
+              <span class="ep-count" id="opp-ep-val">3</span>
+            </div>
+            <div class="orbs-container" id="opp-ep-orbs"></div>
+            <div class="resource-ctrls">
+              <button class="btn-micro" data-action="ep" data-player="opponent" data-delta="-1">-1</button>
+              <button class="btn-micro" data-action="ep" data-player="opponent" data-delta="1">+1</button>
+            </div>
+          </div>
+
+          <!-- SEP -->
+          <div class="resource-card sep-card">
+            <div class="card-title">
+              <span>SEP</span>
+              <span class="sep-count" id="opp-sep-val">1</span>
+            </div>
+            <div class="sep-status-container">
+              <div id="opp-sep-orb" class="sep-orb active"></div>
+              <span id="opp-super-status" class="super-tag ready">超進化可</span>
+            </div>
+            <div class="resource-ctrls">
+              <button class="btn-micro" data-action="sep" data-player="opponent" data-delta="-1">-1</button>
+              <button class="btn-micro" data-action="sep" data-player="opponent" data-delta="1">+1</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-evolve-bar">
+          <button id="opp-btn-evolve" class="btn-action-evolve" data-action="quick-evolve" data-player="opponent">
+            進化
+          </button>
+          <button id="opp-btn-ep-evolve" class="btn-action-ep" data-action="quick-ep-evolve" data-player="opponent">
+            EP進化 <small>(-1EP)</small>
+          </button>
+          <button id="opp-btn-super-evolve" class="btn-action-super" data-action="quick-super-evolve" data-player="opponent">
+            🔥 超進化 <small>(-1SEP)</small>
+          </button>
+        </div>
+      </div>
+
+      <!-- 【シンプル表示用】すっきりリソース行 & 1進化ボタン -->
+      <div class="view-simple-only simple-resources-wrapper">
+        <div class="simple-resource-bar">
+          <!-- PP (プラスマイナスボタン + タップで調整シート) -->
+          <div class="simple-res-item pp-pill-group">
+            <span class="simple-res-label">PP</span>
+            <button class="btn-simple-step btn-simple-pp-minus" data-action="pp" data-player="opponent" data-delta="-1" title="PP -1">-</button>
+            <span class="simple-res-val pp-val-clickable" id="opp-simple-pp-trigger" data-player="opponent" title="タップでPP上限/全回復シート"><b id="opp-simple-pp-val">0</b>/<span id="opp-simple-max-pp-val">0</span></span>
+            <button class="btn-simple-step btn-simple-pp-plus" data-action="pp" data-player="opponent" data-delta="1" title="PP +1">+</button>
+          </div>
+
+          <!-- EP (オーブタップで増減) -->
+          <div class="simple-res-item ep-pill" id="opp-simple-ep-trigger" data-player="opponent" title="タップでEP増減">
+            <span class="simple-res-label">EP</span>
+            <div class="simple-orbs" id="opp-simple-ep-orbs"></div>
+          </div>
+
+          <!-- SEP (タップで増減) -->
+          <div class="simple-res-item sep-pill" id="opp-simple-sep-trigger" data-player="opponent" title="タップでSEP切替">
+            <span class="simple-res-label">SEP</span>
+            <div class="simple-sep-orb" id="opp-simple-sep-orb"></div>
+            <span class="simple-super-ready-dot" id="opp-simple-super-ready-dot" title="超進化可能"></span>
+          </div>
+        </div>
+
+        <!-- シンプル進化ボタン (1つのみ) -->
+        <div class="simple-evolve-row">
+          <button id="opp-simple-btn-evolve" class="btn-simple-evolve" data-player="opponent">
+            <span class="simple-evo-text">進化</span>
+            <span class="simple-evo-sub" id="opp-simple-evo-sub">未進化</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 中央コントロールバー (CENTER BAR) ==================== -->
+    <header class="center-bar">
+      <!-- 左側アクション: 戻す & サイコロ -->
+      <div class="center-sub-actions left">
+        <button id="btn-undo" class="btn-icon" title="直前の操作を取り消し (Undo)">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <path d="M3 7v6h6"></path>
+            <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13"></path>
+          </svg>
+          <span>戻す</span>
+        </button>
+        <button id="btn-dice-sheet" class="btn-icon" title="サイコロ・コインを振る">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+            <circle cx="8" cy="8" r="1.5" fill="currentColor"></circle>
+            <circle cx="16" cy="16" r="1.5" fill="currentColor"></circle>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+            <circle cx="16" cy="8" r="1.5" fill="currentColor"></circle>
+            <circle cx="8" cy="16" r="1.5" fill="currentColor"></circle>
+          </svg>
+          <span>サイコロ</span>
+        </button>
+      </div>
+
+      <!-- ターン表示 & ターン終了ボタン -->
+      <div class="turn-control-main">
+        <div class="turn-info">
+          <button id="btn-turn-minus" class="btn-nano-turn" title="ターン数-1">-</button>
+          <span class="turn-number">TURN <b id="display-turn-count">1</b></span>
+          <button id="btn-turn-plus" class="btn-nano-turn" title="ターン数+1">+</button>
+        </div>
+
+        <button id="btn-end-turn" class="btn-end-turn" title="手番を交代してPP回復・上限増加">
+          <span class="end-turn-text">ターン終了</span>
+          <span class="active-hint" id="active-player-hint">自分 ターン中</span>
+        </button>
+      </div>
+
+      <!-- 右側アクション: 対面/レイアウト & メニュー -->
+      <div class="center-sub-actions right">
+        <!-- 中央置き時のみ表示される対面回転トグル -->
+        <button id="btn-toggle-mirror" class="btn-icon active center-only-btn" title="相手側の対面回転(180°)切替">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <path d="M12 20v-8m0 0l-3 3m3-3l3 3"></path>
+            <path d="M12 4v8m0 0l-3-3m3 3l3-3"></path>
+          </svg>
+          <span id="mirror-btn-label">対面ON</span>
+        </button>
+        <button id="btn-quick-menu" class="btn-icon" title="メニュー・設定">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none">
+            <circle cx="12" cy="6" r="2" fill="currentColor"></circle>
+            <circle cx="12" cy="12" r="2" fill="currentColor"></circle>
+            <circle cx="12" cy="18" r="2" fill="currentColor"></circle>
+          </svg>
+          <span>メニュー</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ==================== 自分側エリア (PLAYER) ==================== -->
+    <section id="panel-player" class="player-panel self" data-player="player">
+      <!-- 【シンプル表示用】すっきりリソース行 & 1進化ボタン -->
+      <div class="view-simple-only simple-resources-wrapper">
+        <!-- シンプル進化ボタン (1つのみ) -->
+        <div class="simple-evolve-row">
+          <button id="self-simple-btn-evolve" class="btn-simple-evolve" data-player="player">
+            <span class="simple-evo-text">進化</span>
+            <span class="simple-evo-sub" id="self-simple-evo-sub">未進化</span>
+          </button>
+        </div>
+
+        <div class="simple-resource-bar">
+          <!-- PP (プラスマイナスボタン + タップで調整シート) -->
+          <div class="simple-res-item pp-pill-group">
+            <span class="simple-res-label">PP</span>
+            <button class="btn-simple-step btn-simple-pp-minus" data-action="pp" data-player="player" data-delta="-1" title="PP -1">-</button>
+            <span class="simple-res-val pp-val-clickable" id="self-simple-pp-trigger" data-player="player" title="タップでPP上限/全回復シート"><b id="self-simple-pp-val">1</b>/<span id="self-simple-max-pp-val">1</span></span>
+            <button class="btn-simple-step btn-simple-pp-plus" data-action="pp" data-player="player" data-delta="1" title="PP +1">+</button>
+          </div>
+
+          <!-- EP (オーブタップで増減) -->
+          <div class="simple-res-item ep-pill" id="self-simple-ep-trigger" data-player="player" title="タップでEP増減">
+            <span class="simple-res-label">EP</span>
+            <div class="simple-orbs" id="self-simple-ep-orbs"></div>
+          </div>
+
+          <!-- SEP (タップで増減) -->
+          <div class="simple-res-item sep-pill" id="self-simple-sep-trigger" data-player="player" title="タップでSEP切替">
+            <span class="simple-res-label">SEP</span>
+            <div class="simple-sep-orb" id="self-simple-sep-orb"></div>
+            <span class="simple-super-ready-dot" id="self-simple-super-ready-dot" title="超進化可能"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 【詳細表示用】クイック進化バー & リソースグリッド -->
+      <div class="view-detail-only detail-resources-wrapper">
+        <div class="quick-evolve-bar">
+          <button id="self-btn-evolve" class="btn-action-evolve" data-action="quick-evolve" data-player="player">
+            進化
+          </button>
+          <button id="self-btn-ep-evolve" class="btn-action-ep" data-action="quick-ep-evolve" data-player="player">
+            EP進化 <small>(-1EP)</small>
+          </button>
+          <button id="self-btn-super-evolve" class="btn-action-super" data-action="quick-super-evolve" data-player="player">
+            🔥 超進化 <small>(-1SEP)</small>
+          </button>
+        </div>
+
+        <div class="resources-grid">
+          <!-- PP -->
+          <div class="resource-card pp-card">
+            <div class="card-title">
+              <span>PP</span>
+              <span class="pp-ratio"><b id="self-pp-val">1</b> / <span id="self-max-pp-val">1</span></span>
+            </div>
+            <div class="resource-ctrls">
+              <button class="btn-micro" data-action="pp" data-player="player" data-delta="-1">-1</button>
+              <button class="btn-micro btn-recover" id="self-pp-max-btn" data-action="pp-recover" data-player="player" title="PP全回復">全回復</button>
+              <button class="btn-micro" data-action="pp" data-player="player" data-delta="1">+1</button>
+            </div>
+            <div class="max-pp-tune">
+              <span class="tiny-label">上限:</span>
+              <button class="btn-nano" data-action="max-pp" data-player="player" data-delta="-1">-</button>
+              <button class="btn-nano" data-action="max-pp" data-player="player" data-delta="1">+</button>
+            </div>
+          </div>
+
+          <!-- EP -->
+          <div class="resource-card ep-card">
+            <div class="card-title">
+              <span>EP</span>
+              <span class="ep-count" id="self-ep-val">0</span>
+            </div>
+            <div class="orbs-container" id="self-ep-orbs"></div>
+            <div class="resource-ctrls">
+              <button class="btn-micro" data-action="ep" data-player="player" data-delta="-1">-1</button>
+              <button class="btn-micro" data-action="ep" data-player="player" data-delta="1">+1</button>
+            </div>
+          </div>
+
+          <!-- SEP -->
+          <div class="resource-card sep-card">
+            <div class="card-title">
+              <span>SEP</span>
+              <span class="sep-count" id="self-sep-val">1</span>
+            </div>
+            <div class="sep-status-container">
+              <div id="self-sep-orb" class="sep-orb active"></div>
+              <span id="self-super-status" class="super-tag">超進化(T7〜)</span>
+            </div>
+            <div class="resource-ctrls">
+              <button class="btn-micro" data-action="sep" data-player="player" data-delta="-1">-1</button>
+              <button class="btn-micro" data-action="sep" data-player="player" data-delta="1">+1</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ライフ & 操作ボタン -->
+      <div class="life-section">
+        <div class="life-controls left">
+          <button class="btn-step btn-minus-5" data-action="life" data-player="player" data-delta="-5">-5</button>
+          <button class="btn-step btn-minus-1" data-action="life" data-player="player" data-delta="-1">-1</button>
+        </div>
+
+        <div class="life-display" id="self-life-display" data-player="player" title="タップして数値を入力">
+          <span class="life-label">LIFE</span>
+          <span id="self-life-value" class="life-value">20</span>
+        </div>
+
+        <div class="life-controls right">
+          <button class="btn-step btn-plus-1" data-action="life" data-player="player" data-delta="1">+1</button>
+          <button class="btn-step btn-plus-5" data-action="life" data-player="player" data-delta="5">+5</button>
+        </div>
+      </div>
+
+      <!-- 自分ヘッダー (下端) -->
+      <div class="panel-header">
+        <div class="player-badge-group">
+          <span class="player-name">自分 (YOU)</span>
+          <span id="self-order-badge" class="order-badge first">先攻 1st</span>
+          <span id="self-active-badge" class="active-turn-badge">手番中</span>
+        </div>
+        <div class="evolve-status-group view-detail-only">
+          <button id="self-evolve-status-btn" class="status-pill not-evolved" title="タップで進化状態切替">
+            未進化
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ==================== モーダル: サイコロ・コインシート ==================== -->
+  <div id="modal-dice-sheet" class="modal-backdrop hidden">
+    <div class="modal-card modal-dice-card">
+      <div class="dice-sheet-header">
+        <h3>サイコロ & コイン</h3>
+        <button id="btn-close-dice-sheet" class="btn-close-nano">✕</button>
+      </div>
+
+      <!-- 対面表示用 (相手向き180°反転) の結果表示エリア -->
+      <div id="dice-display-opp" class="dice-result-banner opp-mirrored">
+        <span class="dice-sub-label">相手視点</span>
+        <div class="dice-values-row" id="opp-dice-values">🎲 -</div>
+        <div class="dice-sum-badge" id="opp-dice-sum">-</div>
+      </div>
+
+      <!-- コントロールエリア -->
+      <div class="dice-controls-panel">
+        <div class="dice-count-selector">
+          <span class="selector-label">ダイス個数:</span>
+          <div class="btn-group-toggle">
+            <button class="btn-toggle-dice active" data-count="1">1個</button>
+            <button class="btn-toggle-dice" data-count="2">2個</button>
+            <button class="btn-toggle-dice" data-count="3">3個</button>
+          </div>
+        </div>
+
+        <div class="dice-actions-grid">
+          <button id="btn-roll-dice-now" class="btn-modal-action dice-main">
+            🎲 サイコロを振る
+          </button>
+          <button id="btn-flip-coin-now" class="btn-modal-action coin-main">
+            🪙 コインを投げる
+          </button>
+        </div>
+      </div>
+
+      <!-- 自分視点 (正立) の結果表示エリア -->
+      <div id="dice-display-self" class="dice-result-banner self-normal">
+        <span class="dice-sub-label">結果</span>
+        <div class="dice-values-row" id="self-dice-values">🎲 ボタンを押してください</div>
+        <div class="dice-sum-badge" id="self-dice-sum">-</div>
+      </div>
+
+      <!-- 直近履歴 -->
+      <div class="dice-history-section">
+        <span class="history-label">直近履歴:</span>
+        <div id="dice-history-list" class="dice-history-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== モーダル: 進化選択シート (シンプル表示用) ==================== -->
+  <div id="modal-evolve-sheet" class="modal-backdrop hidden">
+    <div class="modal-card modal-sheet-card">
+      <h3 id="evolve-sheet-title">進化の選択</h3>
+      <p class="modal-desc">行う進化の種類を選択してください。(1ターン1回)</p>
+      
+      <div class="sheet-choices-vertical">
+        <button id="btn-sheet-evolve-normal" class="btn-sheet-choice">
+          <span class="sheet-choice-title">通常進化 (PP)</span>
+          <span class="sheet-choice-desc">PPを支払って通常進化</span>
+        </button>
+        <button id="btn-sheet-evolve-ep" class="btn-sheet-choice ep-choice">
+          <span class="sheet-choice-title">EP進化 (-1 EP)</span>
+          <span class="sheet-choice-desc">EPを1つ消費して進化コストを1PP軽減</span>
+        </button>
+        <button id="btn-sheet-evolve-super" class="btn-sheet-choice super-choice">
+          <span class="sheet-choice-title">🔥 超進化 (-1 SEP)</span>
+          <span class="sheet-choice-desc" id="sheet-super-desc">SEPを1つ消費して超進化</span>
+        </button>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-cancel-evolve-sheet" class="btn-modal-cancel">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== モーダル: PPクイック調整シート (シンプル表示用) ==================== -->
+  <div id="modal-pp-sheet" class="modal-backdrop hidden">
+    <div class="modal-card modal-sheet-card">
+      <h3 id="pp-sheet-title">PPの調整</h3>
+      <div class="pp-sheet-current">
+        <span class="pp-sheet-big"><b id="pp-sheet-val">0</b> / <span id="pp-sheet-max">0</span></span>
+      </div>
+
+      <div class="pp-sheet-actions">
+        <div class="pp-row-ctrl">
+          <span class="pp-row-label">現在PP:</span>
+          <button class="btn-pp-sheet-step" id="btn-pp-sheet-minus">-1</button>
+          <button class="btn-pp-sheet-step" id="btn-pp-sheet-plus">+1</button>
+          <button class="btn-pp-sheet-recover" id="btn-pp-sheet-recover">全回復</button>
+        </div>
+
+        <div class="pp-row-ctrl">
+          <span class="pp-row-label">最大PP (上限):</span>
+          <button class="btn-pp-sheet-step" id="btn-pp-sheet-max-minus">-1</button>
+          <button class="btn-pp-sheet-step" id="btn-pp-sheet-max-plus">+1</button>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-close-pp-sheet" class="btn-modal-confirm">完了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== モーダル: クイックメニュー (⋯) ==================== -->
+  <div id="modal-quick-menu" class="modal-backdrop hidden">
+    <div class="modal-card modal-menu-card">
+      <h3>メニュー</h3>
+      
+      <div class="menu-items-grid">
+        <!-- レイアウト切替 -->
+        <div class="menu-item-block">
+          <span class="menu-item-label">レイアウト:</span>
+          <div class="btn-group-toggle full-width">
+            <button id="btn-set-layout-center" class="btn-toggle-menu active">中央置き (縦)</button>
+            <button id="btn-set-layout-edge" class="btn-toggle-menu">端置き (横)</button>
+          </div>
+        </div>
+
+        <!-- 表示モード切替 -->
+        <div class="menu-item-block">
+          <span class="menu-item-label">表示モード:</span>
+          <div class="btn-group-toggle full-width">
+            <button id="btn-set-view-detail" class="btn-toggle-menu active">詳細表示</button>
+            <button id="btn-set-view-simple" class="btn-toggle-menu">シンプル表示</button>
+          </div>
+        </div>
+
+        <!-- 端置き時の左右入替 -->
+        <div class="menu-item-block edge-only-setting">
+          <label class="setting-item">
+            <span>端置き時の左右入替 (左=相手 / 右=自分)</span>
+            <input type="checkbox" id="check-swap-sides-menu">
+          </label>
+        </div>
+
+        <!-- 先後 / ダイス / 詳細設定 -->
+        <div class="menu-actions-stack">
+          <button id="btn-menu-open-newgame" class="btn-menu-action">
+            ⚔️ 先攻・後攻 / 新規対戦
+          </button>
+          <button id="btn-menu-open-settings" class="btn-menu-action">
+            ⚙️ 詳細設定 (音・振動・スリープ)
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-close-quick-menu" class="btn-modal-cancel">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== モーダル: ライフ直接入力 ==================== -->
+  <div id="modal-life-input" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <h3 id="life-modal-title">体力の直接入力</h3>
+      <div class="modal-input-group">
+        <input type="number" id="input-life-val" min="-99" max="999" pattern="[0-9]*">
+      </div>
+      <div class="modal-actions">
+        <button id="btn-cancel-life" class="btn-modal-cancel">キャンセル</button>
+        <button id="btn-save-life" class="btn-modal-confirm">変更する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== モーダル: 先攻・後攻 / 新規対戦 ==================== -->
+  <div id="modal-new-game" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <h3>新しい対戦を開始</h3>
+      <p class="modal-desc">自分の先攻・後攻を選択してください。</p>
+      <div class="choice-grid">
+        <button id="btn-start-first" class="btn-choice first">
+          <span class="choice-title">自分が先攻</span>
+          <span class="choice-desc">EP 0 / 超進化 7T〜</span>
+        </button>
+        <button id="btn-start-second" class="btn-choice second">
+          <span class="choice-title">自分が後攻</span>
+          <span class="choice-desc">EP 3 / 超進化 6T〜</span>
+        </button>
+      </div>
+      <div class="dice-section-inline">
+        <button id="btn-roll-dice-action" class="btn-dice-roll">
+          🎲 ランダムで先攻後攻を決める
+        </button>
+        <div id="dice-result-text" class="dice-result-text"></div>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-close-newgame-modal" class="btn-modal-cancel">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== モーダル: 設定 ==================== -->
+  <div id="modal-settings" class="modal-backdrop hidden">
+    <div class="modal-card modal-settings-card">
+      <h3>対戦管理 設定</h3>
+      <div class="settings-list">
+        <div class="setting-item-block">
+          <label>レイアウト:</label>
+          <select id="select-layout-setting" class="setting-select">
+            <option value="center">中央置き (縦・上下)</option>
+            <option value="edge">端置き (横・左右)</option>
+          </select>
+        </div>
+        <div class="setting-item-block">
+          <label>表示モード:</label>
+          <select id="select-viewmode-setting" class="setting-select">
+            <option value="detail">詳細表示 (現行)</option>
+            <option value="simple">シンプル表示 (すっきり)</option>
+          </select>
+        </div>
+        <label class="setting-item">
+          <span>相手側の180°対面表示 (中央置き時)</span>
+          <input type="checkbox" id="check-mirror-setting" checked>
+        </label>
+        <label class="setting-item">
+          <span>端置き時の左右入替 (左=相手 / 右=自分)</span>
+          <input type="checkbox" id="check-swap-sides-setting">
+        </label>
+        <label class="setting-item">
+          <span>効果音 (Web Audio)</span>
+          <input type="checkbox" id="check-sound-setting" checked>
+        </label>
+        <label class="setting-item">
+          <span>振動フィードバック (Vibration)</span>
+          <input type="checkbox" id="check-haptic-setting" checked>
+        </label>
+        <label class="setting-item">
+          <span>画面スリープ防止 (Wake Lock)</span>
+          <input type="checkbox" id="check-wakelock-setting" checked>
+        </label>
+        <div class="setting-item-block">
+          <label>初期ライフ:</label>
+          <input type="number" id="input-init-life" value="20" min="1" max="50">
+        </div>
+      </div>
+
+      <div class="settings-danger-zone">
+        <button id="btn-reset-game-prompt" class="btn-danger-reset">
+          🔄 現在のゲームをリセット
+        </button>
+      </div>
+
+      <div class="modal-actions">
+        <button id="btn-close-settings" class="btn-modal-confirm">設定完了</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== モーダル: 勝敗決着 ==================== -->
+  <div id="modal-gameover" class="modal-backdrop hidden">
+    <div class="modal-card modal-gameover-card">
+      <div id="gameover-icon" class="gameover-icon">🏆</div>
+      <h2 id="gameover-title">MATCH FINISH</h2>
+      <p id="gameover-desc">対戦が終了しました</p>
+      <div class="modal-actions column">
+        <button id="btn-gameover-newmatch" class="btn-modal-confirm">次の対戦を開始</button>
+        <button id="btn-gameover-dismiss" class="btn-modal-cancel">盤面を確認する</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

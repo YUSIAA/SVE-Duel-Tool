@@ -125,6 +125,20 @@ html, body {
     "center-bar center-bar";
 }
 
+/* 端末が縦向きのまま端置きが選ばれた場合、CSSで90度自動回転させてオートで横向きにする */
+@media screen and (orientation: portrait) {
+  .app-container.layout-edge {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 100dvh !important;
+    height: 100dvw !important;
+    transform: translate(-50%, -50%) rotate(90deg);
+    transform-origin: center center;
+    overflow: hidden;
+  }
+}
+
 .layout-edge #panel-player {
   grid-area: left-panel;
   border-right: 1px solid var(--border-color);

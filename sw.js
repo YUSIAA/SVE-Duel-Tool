@@ -3,7 +3,7 @@
  * 完全オフライン動作とキャッシュ管理
  */
 
-const CACHE_NAME = 'sve-tracker-v1.1.0';
+const CACHE_NAME = 'sve-tracker-v1.1.1';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

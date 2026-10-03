@@ -878,20 +878,33 @@ function openQuickMenuModal() {
   elements.modalQuickMenu.classList.remove('hidden');
 }
 
-function setLayoutMode(layout) {
+async function setLayoutMode(layout) {
   store.updateConfig({ layout });
   elements.btnSetLayoutCenter.classList.toggle('active', layout === 'center');
   elements.btnSetLayoutEdge.classList.toggle('active', layout === 'edge');
 
-  // Screen Orientation API
-  if (screen.orientation && screen.orientation.lock) {
-    try {
-      if (layout === 'edge') {
-        screen.orientation.lock('landscape').catch(() => {});
-      } else {
-        screen.orientation.lock('portrait').catch(() => {});
+  // Screen Orientation API & Fullscreen API による自動横向き画面回転
+  if (layout === 'edge') {
+    // 通常タブの場合、fullscreenに入るとorientation.lockが確実に通る
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      try {
+        await document.documentElement.requestFullscreen();
+      } catch (e) {}
+    }
+    if (screen.orientation && screen.orientation.lock) {
+      try {
+        await screen.orientation.lock('landscape');
+      } catch (e) {
+        // ロックがブロックされた場合でも CSS @media (orientation: portrait) により自動90度回転フォールバックが働く
       }
-    } catch (e) {}
+    }
+  } else {
+    // 中央置き (縦) に戻す時
+    if (screen.orientation && screen.orientation.lock) {
+      try {
+        await screen.orientation.lock('portrait');
+      } catch (e) {}
+    }
   }
 }
 
@@ -915,8 +928,9 @@ function openSettingsModal() {
 }
 
 function saveSettingsModal() {
+  const selectedLayout = elements.selectLayoutSetting.value;
   const newConfig = {
-    layout: elements.selectLayoutSetting.value,
+    layout: selectedLayout,
     viewMode: elements.selectViewModeSetting.value,
     mirrorOpponent: elements.checkMirrorSetting.checked,
     swapSides: elements.checkSwapSidesSetting.checked,
@@ -930,6 +944,9 @@ function saveSettingsModal() {
   sounds.setEnabled(newConfig.soundEnabled);
   device.setHapticEnabled(newConfig.hapticEnabled);
   device.setWakeLockEnabled(newConfig.wakeLockEnabled);
+
+  // レイアウトに応じた自動画面回転
+  setLayoutMode(selectedLayout);
 }
 
 // ==========================================================================
